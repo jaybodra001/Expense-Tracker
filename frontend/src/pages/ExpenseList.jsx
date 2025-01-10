@@ -1,20 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
+import { useAuthStore } from "../store/authUser";
+import { format } from "date-fns";
 
 const ExpenseList = () => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
-  const [expenses, setExpenses] = useState([
-    { id: 1, title: "Groceries", amount: 2000, date: "2025-01-01", type: "Expenses" },
-    { id: 2, title: "Salary", amount: 50000, date: "2025-01-05", type: "Income" },
-    { id: 3, title: "Electricity Bill", amount: 1500, date: "2025-01-10", type: "Expenses" },
-    // Add more mock data as needed
-  ]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
   const [editingExpense, setEditingExpense] = useState(null);
+
+  const {
+    expenses,
+    fetchExpenses,
+    deleteExpense,
+    updateExpense,
+    isFetchingExpenses,
+  } = useAuthStore();
+
+  useEffect(() => {
+    fetchExpenses(); // Fetch expenses when component mounts
+  }, [fetchExpenses]);
 
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
@@ -29,19 +37,16 @@ const ExpenseList = () => {
   );
 
   const handleDelete = (id) => {
-    setExpenses(expenses.filter((expense) => expense.id !== id));
+    deleteExpense(id); // Call the delete API
   };
 
   const handleEdit = (expense) => {
-    setEditingExpense(expense);
+    const formattedDate = new Date(expense.date).toISOString().split("T")[0]; // Converts to YYYY-MM-DD format
+  setEditingExpense({ ...expense, date: formattedDate });
   };
 
   const handleUpdate = () => {
-    setExpenses(
-      expenses.map((expense) =>
-        expense.id === editingExpense.id ? editingExpense : expense
-      )
-    );
+    updateExpense(editingExpense._id, editingExpense); // Call the update API
     setEditingExpense(null); // Exit edit mode after saving
   };
 
@@ -64,7 +69,9 @@ const ExpenseList = () => {
           <Sidebar isVisible={isSidebarVisible} />
           <main className="flex-1 p-4 overflow-y-auto">
             <div className="w-full bg-white p-6 rounded-lg shadow-md">
-              <h1 className="text-xl font-bold text-gray-800 mb-4">Expense List</h1>
+              <h1 className="text-xl font-bold text-gray-800 mb-4">
+                Expense List
+              </h1>
 
               {/* Search Bar */}
               <div className="mb-4">
@@ -89,96 +96,111 @@ const ExpenseList = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedExpenses.map((expense) => (
-                    <tr key={expense.id}>
-                      <td className="p-2 border-b">
-                        {editingExpense && editingExpense.id === expense.id ? (
-                          <input
-                            type="text"
-                            name="title"
-                            value={editingExpense.title}
-                            onChange={handleChange}
-                            className="w-full p-1 border border-gray-300 rounded text-sm"
-                          />
-                        ) : (
-                          expense.title
-                        )}
-                      </td>
-                      <td className="p-2 border-b">
-                        {editingExpense && editingExpense.id === expense.id ? (
-                          <input
-                            type="number"
-                            name="amount"
-                            value={editingExpense.amount}
-                            onChange={handleChange}
-                            className="w-full p-1 border border-gray-300 rounded text-sm"
-                          />
-                        ) : (
-                          expense.amount
-                        )}
-                      </td>
-                      <td className="p-2 border-b">
-                        {editingExpense && editingExpense.id === expense.id ? (
-                          <input
-                            type="date"
-                            name="date"
-                            value={editingExpense.date}
-                            onChange={handleChange}
-                            className="w-full p-1 border border-gray-300 rounded text-sm"
-                          />
-                        ) : (
-                          expense.date
-                        )}
-                      </td>
-                      <td className="p-2 border-b">
-                        {editingExpense && editingExpense.id === expense.id ? (
-                          <select
-                            name="type"
-                            value={editingExpense.type}
-                            onChange={handleChange}
-                            className="w-full p-1 border border-gray-300 rounded text-sm"
-                          >
-                            <option value="Income">Income</option>
-                            <option value="Expenses">Expenses</option>
-                          </select>
-                        ) : (
-                          expense.type
-                        )}
-                      </td>
-                      <td className="p-2 border-b">
-                        {editingExpense && editingExpense.id === expense.id ? (
-                          <button
-                            onClick={handleUpdate}
-                            className="text-green-500 hover:underline text-sm"
-                          >
-                            Update
-                          </button>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => handleEdit(expense)}
-                              className="text-blue-500 hover:underline text-sm mr-2"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(expense.id)}
-                              className="text-red-500 hover:underline text-sm"
-                            >
-                              Delete
-                            </button>
-                          </>
-                        )}
+                  {isFetchingExpenses ? (
+                    <tr>
+                      <td colSpan="5" className="p-2 text-center">
+                        Loading...
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedExpenses.map((expense) => (
+                      <tr key={expense._id}>
+                        <td className="p-2 border-b">
+                          {editingExpense &&
+                          editingExpense._id === expense._id ? (
+                            <input
+                              type="text"
+                              name="title"
+                              value={editingExpense.title}
+                              onChange={handleChange}
+                              className="w-full p-1 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            expense.title
+                          )}
+                        </td>
+                        <td className="p-2 border-b">
+                          {editingExpense &&
+                          editingExpense._id === expense._id ? (
+                            <input
+                              type="number"
+                              name="amount"
+                              value={editingExpense.amount}
+                              onChange={handleChange}
+                              className="w-full p-1 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            expense.amount
+                          )}
+                        </td>
+                        <td className="p-2 border-b">
+                          {editingExpense &&
+                          editingExpense._id === expense._id ? (
+                            <input
+                              type="date"
+                              name="date"
+                              value={editingExpense.date}
+                              onChange={handleChange}
+                              className="w-full p-1 border border-gray-300 rounded text-sm"
+                            />
+                          ) : (
+                            format(new Date(expense.date), "yyyy-MM-dd") // Formats the date as YYYY-MM-DD
+                          )}
+                        </td>
+                        <td className="p-2 border-b">
+                          {editingExpense &&
+                          editingExpense._id === expense._id ? (
+                            <select
+                              name="type"
+                              value={editingExpense.type}
+                              onChange={handleChange}
+                              className="w-full p-1 border border-gray-300 rounded text-sm"
+                            >
+                              <option value="Income">Income</option>
+                              <option value="Expenses">Expenses</option>
+                            </select>
+                          ) : (
+                            expense.type
+                          )}
+                        </td>
+                        <td className="p-2 border-b">
+                          {editingExpense &&
+                          editingExpense._id === expense._id ? (
+                            <button
+                              onClick={handleUpdate}
+                              className="text-green-500 hover:underline text-sm"
+                            >
+                              Update
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEdit(expense)}
+                                className="text-blue-500 hover:underline text-sm mr-2"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDelete(expense._id)}
+                                className="text-red-500 hover:underline text-sm"
+                              >
+                                Delete
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
 
               {/* Pagination */}
               <div className="flex justify-between items-center mt-4">
                 <button
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
                   disabled={currentPage === 1}
                   className={`p-2 text-sm rounded ${
                     currentPage === 1
