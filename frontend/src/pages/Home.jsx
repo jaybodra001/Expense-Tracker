@@ -1,76 +1,97 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import Sidebar from "../components/Sidebar";
 import { Bar, Line } from "react-chartjs-2";
 import "chart.js/auto";
-
+import { useAuthStore } from "../store/authUser"; 
 const Home = () => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("weekly");
   const [selectedGraphType, setSelectedGraphType] = useState("Bar");
 
-  // Data for charts
-  const chartData = {
-    daily: {
-      labels: ["01 Jan", "02 Jan", "03 Jan", "04 Jan", "05 Jan", "06 Jan", "07 Jan"],
+  const [chartData, setChartData] = useState(null);
+  const [totalIncome, setTotalIncome] = useState(0);
+  const [totalExpenses, setTotalExpenses] = useState(0);
+
+  const { fetchExpenses, expenses } = useAuthStore(); 
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
+
+  useEffect(() => {
+    if (expenses.length > 0) {
+      const income = expenses.reduce((sum, exp) => (exp.type === "Income" ? sum + exp.amount : sum), 0);
+      const expensesTotal = expenses.reduce((sum, exp) => (exp.type === "Expenses" ? sum + exp.amount : sum), 0);
+  
+      setTotalIncome(income);
+      setTotalExpenses(expensesTotal);
+  
+      const periodData = processChartData(expenses, selectedPeriod);
+      console.log("Chart Data: ", periodData); 
+      setChartData(periodData);
+    }
+  }, [expenses, selectedPeriod]);
+  
+
+  const processChartData = (data, period) => {
+    const groupedData = groupDataByPeriod(data, period);
+    console.log("Grouped Data for Chart:", groupedData); 
+  
+    return {
+      labels: Object.keys(groupedData),
       datasets: [
         {
           label: "Income",
-          data: [100, 200, 150, 300, 250, 400, 350],
+          data: Object.values(groupedData).map((item) => item.income),
           backgroundColor: "rgba(75, 192, 192, 0.6)",
           borderColor: "rgba(75, 192, 192, 1)",
         },
         {
           label: "Expenses",
-          data: [80, 180, 120, 250, 200, 350, 300],
+          data: Object.values(groupedData).map((item) => item.expenses),
           backgroundColor: "rgba(255, 99, 132, 0.6)",
           borderColor: "rgba(255, 99, 132, 1)",
         },
       ],
-    },
-    weekly: {
-      labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      datasets: [
-        {
-          label: "Income",
-          data: [500, 700, 800, 600, 900, 1100, 1000],
-          backgroundColor: "rgba(75, 192, 192, 0.6)",
-          borderColor: "rgba(75, 192, 192, 1)",
-        },
-        {
-          label: "Expenses",
-          data: [400, 600, 500, 700, 800, 1000, 900],
-          backgroundColor: "rgba(255, 99, 132, 0.6)",
-          borderColor: "rgba(255, 99, 132, 1)",
-        },
-      ],
-    },
-    monthly: {
-      labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-      datasets: [
-        {
-          label: "Income",
-          data: [2000, 2500, 3000, 2800, 3200, 3500, 4000, 3800, 3600, 3900, 4200, 4500],
-          backgroundColor: "rgba(75, 192, 192, 0.6)",
-          borderColor: "rgba(75, 192, 192, 1)",
-        },
-        {
-          label: "Expenses",
-          data: [1800, 2200, 2600, 2400, 2900, 3000, 3200, 3100, 2900, 3000, 3500, 3700],
-          backgroundColor: "rgba(255, 99, 132, 0.6)",
-          borderColor: "rgba(255, 99, 132, 1)",
-        },
-      ],
-    },
+    };
   };
 
-  const totalIncome = 50000;
-  const totalExpenses = 45000;
+  const groupDataByPeriod = (data, period) => {
+    const grouped = {};
+    data.forEach((item) => {
+      const date = new Date(item.date);
+      let key;
+  
+      if (period === "daily") {
+        key = date.toISOString().split("T")[0]; // YYYY-MM-DD
+      } else if (period === "weekly") {
+        const week = `${date.getFullYear()}-W${Math.ceil(date.getDate() / 7)}`;
+        key = week;
+      } else if (period === "monthly") {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`; // YYYY-MM
+      }
+  
+      if (!grouped[key]) {
+        grouped[key] = { income: 0, expenses: 0 };
+      }
+  
+      if (item.type === "Income") {
+        grouped[key].income += item.amount;
+      } else if (item.type === "Expenses") {
+        grouped[key].expenses += item.amount;
+      }
+    });
+  
+    return grouped;
+  };
+  
 
-  // Render chart
+  // Render the selected chart type (Bar or Line)
   const renderChart = () => {
-    const data = chartData[selectedPeriod];
+    if (!chartData) return <p>Loading chart...</p>;
+
     const options = {
       maintainAspectRatio: false,
       plugins: {
@@ -81,13 +102,15 @@ const Home = () => {
         y: { ticks: { font: { size: 10 } } },
       },
     };
+
     return selectedGraphType === "Line" ? (
-      <Line data={data} options={options} height={150} />
+      <Line data={chartData} options={options} height={150} />
     ) : (
-      <Bar data={data} options={options} height={150} />
+      <Bar data={chartData} options={options} height={150} />
     );
   };
 
+  // Toggle sidebar visibility
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };

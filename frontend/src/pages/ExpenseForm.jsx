@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Footer from "../components/Footer";
+import { useAuthStore } from "../store/authUser";
 
 const ExpenseForm = () => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
@@ -11,6 +12,10 @@ const ExpenseForm = () => {
     date: "",
     type: "Income",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+
+  const { createExpense } = useAuthStore(); 
 
   const toggleSidebar = () => {
     setIsSidebarVisible(!isSidebarVisible);
@@ -21,16 +26,26 @@ const ExpenseForm = () => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Data Submitted:", formData);
-    // Reset the form
-    setFormData({
-      title: "",
-      amount: "",
-      date: "",
-      type: "Income",
-    });
+    setIsSubmitting(true);
+    setMessage("");
+
+    try {
+      await createExpense(formData); // Call the createExpense function
+      setMessage("Expense created successfully!");
+      // Reset the form
+      setFormData({
+        title: "",
+        amount: "",
+        date: "",
+        type: "Income",
+      });
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Failed to create expense.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -45,7 +60,6 @@ const ExpenseForm = () => {
                 Add Expense or Income
               </h1>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Title */}
                 <div>
                   <label
                     htmlFor="title"
@@ -61,11 +75,9 @@ const ExpenseForm = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Enter title"
-                    className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+                    className="w-full p-4 border border-gray-300 rounded-xl text-sm"
                   />
                 </div>
-
-                {/* Amount */}
                 <div>
                   <label
                     htmlFor="amount"
@@ -81,11 +93,9 @@ const ExpenseForm = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Enter amount"
-                    className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+                    className="w-full p-4 border border-gray-300 rounded-xl text-sm"
                   />
                 </div>
-
-                {/* Date */}
                 <div>
                   <label
                     htmlFor="date"
@@ -100,11 +110,9 @@ const ExpenseForm = () => {
                     value={formData.date}
                     onChange={handleInputChange}
                     required
-                    className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+                    className="w-full p-4 border border-gray-300 rounded-xl text-sm"
                   />
                 </div>
-
-                {/* Type */}
                 <div>
                   <label
                     htmlFor="type"
@@ -117,23 +125,25 @@ const ExpenseForm = () => {
                     name="type"
                     value={formData.type}
                     onChange={handleInputChange}
-                    className="w-full p-4 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+                    className="w-full p-4 border border-gray-300 rounded-xl text-sm"
                   >
                     <option value="Income">Income</option>
                     <option value="Expenses">Expenses</option>
                   </select>
                 </div>
-
-                {/* Submit Button */}
                 <div>
                   <button
                     type="submit"
-                    className="w-full bg-blue-600 text-white p-4 rounded-xl text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 ease-in-out"
+                    disabled={isSubmitting}
+                    className="w-full bg-blue-600 text-white p-4 rounded-xl text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    Add Entry
+                    {isSubmitting ? "Submitting..." : "Add Entry"}
                   </button>
                 </div>
               </form>
+              {message && (
+                <p className="text-center mt-4 text-sm text-red-500">{message}</p>
+              )}
             </div>
           </main>
         </div>

@@ -6,39 +6,37 @@ import ExpenseForm from "./pages/ExpenseForm";
 import ExpenseList from "./pages/ExpenseList";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import { useAuthStore } from "./store/authUser";
+import { useEffect } from "react";
+import { Loader } from "lucide-react";
 
-// npm install chart.js react-chartjs-2  create chart
+// npm install chart.js react-chartjs-2  <---create chart
 
 function App() {
-  // const { user, isCheckingAuth, authCheck } = useAuthStore();
+  const { user, isCheckingAuth, authCheck } = useAuthStore();
 
-  // useEffect(() => {
-  //   authCheck();
-  // }, [authCheck]);
+  useEffect(() => {
+    authCheck();
+  }, [authCheck]);
 
-  // if (isCheckingAuth) {
-	// 	return (
-	// 		<div className='h-screen'>
-	// 			<div className='flex justify-center items-center bg-black h-full'>
-	// 				<Loader className='animate-spin text-blue-500 size-10' />
-	// 			</div>
-	// 		</div>
-	// 	);
-	// }
+  if (isCheckingAuth) {
+		return (
+			<div className='h-screen'>
+				<div className='flex justify-center items-center bg-black h-full'>
+					<Loader className='animate-spin text-blue-500 size-10' />
+				</div>
+			</div>
+		);
+	}
 
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />}/>
-        <Route path="/form" element={<ExpenseForm />} />
-        <Route path="/list" element={<ExpenseList />}/>
-        {/* <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
+        <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
+        <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
-        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
-        <Route path="/profile/borrow" element={user ? <BorrowBook /> : <Navigate to="/login" />} />
-        <Route path="/profile/manage-book" element={user && user.role === "admin" ? <ManageBook /> : <Navigate to="/login" />} /> */}
+        <Route path="/form" element={user ? <ExpenseForm /> : <Navigate to="/login" />} />
+        <Route path="/list" element={user ? <ExpenseList /> : <Navigate to="/login" />}/>
       </Routes>
       <Toaster />
     </Router>

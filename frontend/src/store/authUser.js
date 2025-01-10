@@ -1,190 +1,127 @@
-import axios from "axios";
-import toast from "react-hot-toast";
-import { create } from "zustand";
+  import axios from "axios";
+  import toast from "react-hot-toast";
+  import { create } from "zustand";
 
-export const useAuthStore = create((set) => ({
-  user: null,
-  isSigningUp: false,
-  isCheckingAuth: true,
-  isLoggingOut: false,
-  isLoggingIn: false,
-  books: [],
-  isFetchingBooks: false, 
-  isBorrowing: false,
-  isReturning: false,
-  isCreatingBook: false,
-  isUpdatingBook: false,
-  isDeletingBook: false,
+  export const useAuthStore = create((set) => ({
+    user: null,
+    isSigningUp: false,
+    isCheckingAuth: true,
+    isLoggingOut: false,
+    isLoggingIn: false,
+    expenses: [],
+    isFetchingExpenses: false,
+    isCreatingExpense: false,
+    isUpdatingExpense: false,
+    isDeletingExpense: false,
 
-  signup: async (credentials) => {
-    set({ isSigningUp: true });
+    signup: async (credentials) => {
+      set({ isSigningUp: true });
+      try {
+        const response = await axios.post("/api/v1/auth/signup", credentials);
+        set({ user: response.data.user, isSigningUp: false });
+        toast.success("Account created successfully");
+      } catch (error) {
+        toast.error(error.response.data.message || "Signup failed");
+        set({ isSigningUp: false, user: null });
+      }
+    },
+
+    login: async (credentials) => {
+      set({ isLoggingIn: true });
+      try {
+        const response = await axios.post("/api/v1/auth/login", credentials);
+        set({ user: response.data.user, isLoggingIn: false });
+        toast.success("Logged in successfully");
+        return true;
+      } catch (error) {
+        set({ isLoggingIn: false, user: null });
+        toast.error(error.response.data.message || "Login failed");
+      }
+    },
+
+    logout: async () => {
+      set({ isLoggingOut: true });
+      try {
+        await axios.post("/api/v1/auth/logout");
+        set({ user: null, isLoggingOut: false });
+        toast.success("Logged out successfully");
+      } catch (error) {
+        set({ isLoggingOut: false });
+        toast.error(error.response.data.message || "Logout failed");
+      }
+    },
+
+    authCheck: async () => {
+      set({ isCheckingAuth: true });
+      try {
+        const response = await axios.get("/api/v1/auth/authCheck");
+        set({ user: response.data.user, isCheckingAuth: false });
+      } catch (error) {
+        set({ isCheckingAuth: false, user: null });
+      }
+    },
+
+  // Create Expense
+  createExpense: async (expenseData) => {
+    set({ isCreatingExpense: true });
     try {
-      const response = await axios.post("/api/v1/auth/signup", credentials);
-      set({ user: response.data.user, isSigningUp: false });
-      toast.success("Account created successfully");
-    } catch (error) {
-      toast.error(error.response.data.message || "Signup failed");
-      set({ isSigningUp: false, user: null });
-    }
-  },
-
-  login: async (credentials) => {
-    set({ isLoggingIn: true });
-    try {
-      const response = await axios.post("/api/v1/auth/login", credentials);
-      set({ user: response.data.user, isLoggingIn: false });
-      toast.success("Logged in successfully");
-      return true;
-    } catch (error) {
-      set({ isLoggingIn: false, user: null });
-      toast.error(error.response.data.message || "Login failed");
-    }
-  },
-
-  logout: async () => {
-    set({ isLoggingOut: true });
-    try {
-      await axios.post("/api/v1/auth/logout");
-      set({ user: null, isLoggingOut: false });
-      toast.success("Logged out successfully");
-    } catch (error) {
-      set({ isLoggingOut: false });
-      toast.error(error.response.data.message || "Logout failed");
-    }
-  },
-
-  authCheck: async () => {
-    set({ isCheckingAuth: true });
-    try {
-      const response = await axios.get("/api/v1/auth/authCheck");
-      set({ user: response.data.user, isCheckingAuth: false });
-    } catch (error) {
-      set({ isCheckingAuth: false, user: null });
-    }
-  },
-
-  fetchBooks: async () => {
-    set({ isFetchingBooks: true });
-    try {
-      const response = await axios.get("/api/v1/auth/book");
-      set({ books: response.data.books, isFetchingBooks: false });
-    } catch (error) {
-      set({ isFetchingBooks: false });
-      toast.error(error.response.data.message || "Failed to fetch books");
-    }
-  },
-
-  createBook: async (bookData) => {
-    set({ isCreatingBook: true });
-    try {
-      const response = await axios.post("/api/v1/auth/book", bookData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      toast.success("Book created successfully!");
+      const response = await axios.post("/api/v1/auth/expenses", expenseData);
       set((state) => ({
-        books: [...state.books, response.data.book],
-        isCreatingBook: false,
+        expenses: [...state.expenses, response.data.expense],
+        isCreatingExpense: false,
       }));
+      toast.success("Expense created successfully");
     } catch (error) {
-      set({ isCreatingBook: false });
-      toast.error(error.response?.data?.message || "Failed to create the book");
+      set({ isCreatingExpense: false });
+      toast.error(error.response.data.message || "Failed to create expense");
     }
   },
 
-  updateBook: async (bookId, updatedData) => {
-    set({ isUpdatingBook: true });
+  // Fetch Expenses
+  fetchExpenses: async () => {
+    set({ isFetchingExpenses: true });
     try {
-      const response = await axios.put(`/api/v1/auth/book/${bookId}`, updatedData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      toast.success("Book updated successfully!");
+      const response = await axios.get("/api/v1/auth/expenses");
+      console.log("API Response:", response.data); // Log the response to check the data
+      set({ expenses: response.data.expenses, isFetchingExpenses: false });
+    } catch (error) {
+      set({ isFetchingExpenses: false });
+      toast.error(error.response?.data?.message || "Failed to fetch expenses");
+    }
+  },
+  
+
+  // Update Expense
+  updateExpense: async (id, updatedData) => {
+    set({ isUpdatingExpense: true });
+    try {
+      const response = await axios.put(`/api/v1/auth/expenses/${id}`, updatedData);
       set((state) => ({
-        books: state.books.map((book) =>
-          book._id === bookId ? { ...book, ...updatedData } : book
+        expenses: state.expenses.map((expense) =>
+          expense._id === id ? response.data.expense : expense
         ),
-        isUpdatingBook: false,
+        isUpdatingExpense: false,
       }));
+      toast.success("Expense updated successfully");
     } catch (error) {
-      set({ isUpdatingBook: false });
-      toast.error(error.response?.data?.message || "Failed to update the book");
+      set({ isUpdatingExpense: false });
+      toast.error(error.response.data.message || "Failed to update expense");
     }
   },
 
-  deleteBook: async (bookId) => {
-    set({ isDeletingBook: true });
+  // Delete Expense
+  deleteExpense: async (id) => {
+    set({ isDeletingExpense: true });
     try {
-      await axios.delete(`/api/v1/auth/book/${bookId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      toast.success("Book deleted successfully!");
+      await axios.delete(`/api/v1/auth/expenses/${id}`);
       set((state) => ({
-        books: state.books.filter((book) => book._id !== bookId),
-        isDeletingBook: false,
+        expenses: state.expenses.filter((expense) => expense._id !== id),
+        isDeletingExpense: false,
       }));
+      toast.success("Expense deleted successfully");
     } catch (error) {
-      set({ isDeletingBook: false });
-      toast.error(error.response?.data?.message || "Failed to delete the book");
+      set({ isDeletingExpense: false });
+      toast.error(error.response.data.message || "Failed to delete expense");
     }
   },
-
-  borrowBook: async (bookId) => {
-    set({ isBorrowing: true });
-    try {
-      const response = await axios.post(
-        `/api/v1/auth/book/${bookId}/borrow`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      toast.success("Book borrowed successfully!");
-      set((state) => ({
-        books: state.books.map((book) =>
-          book._id === bookId ? { ...book, isBorrowed: true, borrowedBy: state.user.id } : book
-        ),
-        isBorrowing: false,
-      }));
-    } catch (error) {
-      set({ isBorrowing: false });
-      toast.error(error.response?.data?.message || "Failed to borrow the book");
-    }
-  },
-
-  returnBook: async (bookId) => {
-    set({ isReturning: true });
-    try {
-      const response = await axios.post(
-        `/api/v1/auth/book/${bookId}/return`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      toast.success("Book returned successfully!");
-      set((state) => ({
-        books: state.books.map((book) =>
-          book._id === bookId ? { ...book, isBorrowed: false, borrowedBy: null } : book
-        ),
-        isReturning: false,
-      }));
-    } catch (error) {
-      set({ isReturning: false });
-      toast.error(error.response?.data?.message || "Failed to return the book");
-    }
-  },
-
-  // Get books borrowed by the logged-in user
-  getUserBorrowedBooks: () => {
-    return (state) => state.books.filter((book) => book.isBorrowed && book.borrowedBy === state.user.id);
-  },
-}));
+  }));

@@ -22,8 +22,8 @@ const Navbar = () => {
           </a>
         ) : (
           <>
-            <a href="/profile" className="text-gray-800">
-              Profile
+            <a href="#" className="text-gray-800">
+              Welcome, {user.name} 
             </a>
             <button
               onClick={logout} // Replace with actual logout logic

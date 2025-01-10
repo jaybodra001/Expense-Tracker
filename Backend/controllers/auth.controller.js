@@ -154,6 +154,7 @@ export async function createExpense(req, res) {
 // Fetch All Expenses for a User
 export async function getExpenses(req, res) {
   try {
+    console.log("User ID:", req.user._id); // Log the user ID
     const userId = req.user._id;
 
     const expenses = await Expense.find({ user: userId });
@@ -170,6 +171,7 @@ export async function getExpenses(req, res) {
     res.status(500).json({ success: false, message: "Internal server error!" });
   }
 }
+
 
 // Update Expense
 export async function updateExpense(req, res) {
