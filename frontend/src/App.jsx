@@ -1,15 +1,11 @@
 import "./index.css";
 import Home from "./pages/Home";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useAuthStore } from './store/authUser';
-import { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";  
 import { Toaster } from "react-hot-toast";
-import Profile from "./pages/Profile";
-import BorrowBook from "./pages/BorrowBook";
-import ManageBook from "./pages/ManageBook";
+import ExpenseForm from "./pages/ExpenseForm";
+import ExpenseList from "./pages/ExpenseList";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { Loader } from 'lucide-react'
 
 // npm install chart.js react-chartjs-2  create chart
 
@@ -34,6 +30,10 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />}/>
+        <Route path="/form" element={<ExpenseForm />} />
+        <Route path="/list" element={<ExpenseList />}/>
         {/* <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
         <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />

@@ -17,13 +17,13 @@ const Sidebar = ({ isVisible }) => {
         Dashboard
       </NavLink>
         <NavLink
-        to="/profile/manage-book"
+        to="/form"
         className="block p-2 rounded hover:bg-blue-800 hover:text-white transition"
       >
         Expense Form
       </NavLink>
       <NavLink
-        to="/profile/borrow"
+        to="/list"
         className="block p-2 rounded hover:bg-blue-800 hover:text-white transition"
       >
          Expense List

@@ -16,9 +16,6 @@ const Navbar = () => {
 
       {/* Navigation Links */}
       <div className="flex items-center space-x-6">
-        <a href="/" className="text-gray-800">
-          Books
-        </a>
         {!user ? (
           <a href="/login" className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition">
             Login
